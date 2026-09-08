@@ -218,6 +218,10 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
+// Ativa o cache offline para carregar rápido e funcionar sem internet
+db.enablePersistence().catch((err) => {
+    console.error("Erro no cache offline:", err.code);
+});
 /* ============ STORAGE HELPERS (SALVANDO NA NUVEM) ============ */
 async function loadList(key){
   try {
@@ -343,7 +347,7 @@ const RECIPES = [
     ingredientes:[
       {nome:'Água', qtd:205}, {nome:'Açaí', qtd:240}, {nome:'Açúcar', qtd:83},
       {nome:'Maltodextrina', qtd:40}, {nome:'Dextrose', qtd:42}, {nome:'Liga Aqua 5', qtd:3.4},
-      {nome:'Ácido Cítrico', qtd:0.8}, {nome:'Emulsificante', qtd:2.8}, {nome:'Corante', qtd:0.5},
+      {nome:'Ácido Cítrico', qtd:0.8}, {nome:'Emulsificante', qtd:2.8}, {nome:'Corante Roxo', qtd:0.5},
       {nome:'Xarope de Guaraná', qtd:1.24}, {nome:'Xarope de Maçã', qtd:0.25},
     ]},
   { id:'picole_fruta', nome:'Picolé de Fruta', pasteuriza:true, maturacao:'tempo_only', embalagem:true,
