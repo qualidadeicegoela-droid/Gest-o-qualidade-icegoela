@@ -5,7 +5,7 @@
   --ink-soft: #6B7280;
   
   /* Roxo moderno, leve e corporativo */
-  --primary: #7C3AED; 
+  --primary: hwb(262 48% 5%); 
   --primary-dark: #5B21B6;
   --primary-tint: #EDE9FE;
   
