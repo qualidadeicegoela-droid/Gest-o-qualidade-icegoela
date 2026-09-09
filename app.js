@@ -1257,6 +1257,45 @@ window.__deleteHigiene = async (id)=>{
   await saveList('qg_higiene', list);
   renderHigiene();
 };
+/* ============ BACKUP E LIMPEZA ============ */
+window.__downloadBackup = async () => {
+  // Puxa todas as coleções de dados da nuvem
+  const collections = ['qg_piq', 'qg_temp_producao', 'qg_temp_expedicao', 'qg_recebimento', 'qg_estoque', 'qg_estoque_mov', 'qg_pasteurizacao', 'qg_saborizacao', 'qg_higiene', 'qg_fornecedores', 'qg_documentos'];
+  const backup = {};
+  
+  for(const k of collections) {
+     backup[k] = await loadList(k);
+  }
+  
+  // Cria o arquivo e faz o download automático para a pasta Downloads do seu PC
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'backup_icegoela_' + todayISO() + '.json';
+  a.click();
+  
+  alert("Backup salvo com sucesso no seu computador!");
+};
 
+window.__limparBancoDeDados = async () => {
+  // Proteção para ninguém apertar sem querer
+  const senha = prompt("CUIDADO: Isso vai APAGAR O HISTÓRICO DA NUVEM.\nAs planilhas voltarão ao zero para o novo ciclo.\nDigite a palavra ZERAR para confirmar:");
+  
+  if(senha === 'ZERAR') {
+     // Listas que serão zeradas (histórico de produção)
+     const collections = ['qg_piq', 'qg_temp_producao', 'qg_temp_expedicao', 'qg_recebimento', 'qg_estoque', 'qg_estoque_mov', 'qg_pasteurizacao', 'qg_saborizacao', 'qg_higiene'];
+     
+     // Sobrescreve as listas com arrays vazios na nuvem
+     for(const k of collections) {
+        await saveList(k, []);
+     }
+     
+     alert("Sistema zerado com sucesso! A página será recarregada.");
+     location.reload();
+  } else if (senha !== null) {
+     alert("Palavra incorreta. O sistema NÃO foi zerado.");
+  }
+};
 /* ============ INIT ============ */
 route('dashboard');
