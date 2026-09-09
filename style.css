@@ -6,7 +6,7 @@
   
   /* Roxo moderno, leve e corporativo */
   --primary: hwb(262 48% 5%); 
-  --primary-dark: #5B21B6;
+  --primary-dark: hsl(263, 90%, 69%);
   --primary-tint: #EDE9FE;
   
   --mint: #059669;
