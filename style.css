@@ -4,10 +4,10 @@
   --ink: #111827;
   --ink-soft: #6B7280;
   
-  /* Roxo moderno, leve e corporativo */
-  --primary: #421B38(52.65% 0.08921 -0.19244); 
-  --primary-dark: #2A0F22(263 7% 3%);
-  --primary-tint: #EDE9FE;
+  /* Roxo Exato da Logo Ice Goela */
+  --primary: #421B38; 
+  --primary-dark: #2A0F22;
+  --primary-tint: #F2E6ED;
   
   --mint: #059669;
   --mint-tint: #D1FAE5;
