@@ -982,6 +982,8 @@ async function renderSaborizacao(){
 
       <div style="margin-top:20px;"><button class="btn btn-primary" id="sb_save">Salvar ficha</button></div>
     </div>
+    <label style="margin-top: 10px; display: block; font-weight: 600; font-size: 0.9rem; color: var(--ink);">Observação / Ocorrências do Lote:</label>
+<textarea id="sab_obs" placeholder="Anote aqui desvios, atrasos ou detalhes do lote..." style="width: 100%; padding: 10px; border-radius: var(--radius); border: 1px solid var(--line); font-family: inherit; margin-top: 4px; resize: vertical; min-height: 60px;"></textarea>
 
     <div class="card">
       <h2>Rastreabilidade</h2>
@@ -993,7 +995,7 @@ async function renderSaborizacao(){
     <div class="card">
       <h2>Histórico de fichas</h2>
       <div class="table-wrap"><table>
-        <thead><tr><th>Data</th><th>Produto</th><th>Lote</th><th>Operador</th><th>Ingred.</th><th>Embal.</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Produto</th><th>Lote</th><th>Operador</th><th>Ingred.</th><th>Embal.</th><th>Observação</th></tr></thead>
         <tbody id="sb_hist_body"></tbody>
       </table></div>
     </div>
@@ -1034,6 +1036,8 @@ async function renderSaborizacao(){
     if(!produto || !lote) return;
     const data = document.getElementById('sb_data').value;
     const operador = document.getElementById('sb_operador').value;
+    
+    
 
     const ingredientes = Array.from(document.querySelectorAll('#sb_ing_body tr')).map(tr=>({
       ingrediente: tr.querySelector('.sb-i-nome').value.trim(),
@@ -1050,8 +1054,9 @@ async function renderSaborizacao(){
       lote: tr.querySelector('.sb-e-lote').value.trim(),
       responsavel: tr.querySelector('.sb-e-resp').value.trim(),
     })).filter(e=>e.embalagem);
+const obs = document.getElementById('sab_obs').value;
 
-    const rec = {id:uid(), data, produto, operador, lote, ingredientes, embalagens};
+    const rec = {id:uid(), data, produto, operador, lote, ingredientes, embalagens, obs: obs};
     const freshList = await loadList(key);
     freshList.push(rec);
     const ok = await saveList(key, freshList);
@@ -1103,10 +1108,15 @@ function paintSaborHist(list){
 function saborDetailHtml(r, highlight){
   const h = (highlight||'').toLowerCase();
   const mark = (txt)=> (h && txt && txt.toLowerCase().includes(h)) ? `<span class="pill warn">${txt}</span>` : (txt||'—');
-  const ing = r.ingredientes.length ? `
+  const ing = (r.ingredientes.length ? `
     <table style="margin-bottom:10px;"><thead><tr><th>Ingrediente</th><th>Qtd</th><th>Lote</th><th>Responsável</th></tr></thead>
-    <tbody>${r.ingredientes.map(i=>`<tr><td>${i.ingrediente}</td><td>${i.quantidade||'—'} ${i.unidade||''}</td><td>${mark(i.lote)}</td><td>${i.responsavel||'—'}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">Sem ingredientes registrados.</p>';
-  const emb = r.embalagens.length ? `
+    <tbody>${r.ingredientes.map(i=>`<tr><td>${i.ingrediente}</td><td>${i.quantidade||'—'} ${i.unidade||''}</td><td>${mark(i.lote)}</td><td>${i.responsavel||'—'}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">Sem ingredientes registrados.</p>') 
+    + 
+    `<div style="margin-top: 12px; padding: 10px; background: var(--primary-tint); border-radius: var(--radius); font-size: 0.9rem;">
+      <strong>Observação / Ocorrências:</strong> <br>
+      ${r.obs ? r.obs : 'Nenhuma observação registrada.'}
+    </div>`;
+    const emb = r.embalagens.length ? `
     <table><thead><tr><th>Embalagem</th><th>Qtd</th><th>Lote</th><th>Responsável</th></tr></thead>
     <tbody>${r.embalagens.map(e=>`<tr><td>${e.embalagem}</td><td>${e.quantidade||'—'} ${e.unidade||''}</td><td>${mark(e.lote)}</td><td>${e.responsavel||'—'}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">Sem embalagens registradas.</p>';
   return `<div style="padding:10px 4px;"><b>Ingredientes</b>${ing}<b>Embalagens</b>${emb}</div>`;
