@@ -517,9 +517,9 @@ document.getElementById('t_add').addEventListener('click', async () => {
     const ok = await saveList(key, freshList);
     if(!ok){ showSaveError(); return; }
     renderTemp(setor);
-  });
+  };
   paintTempTable(list, key);
-}
+
 function paintTempTable(list, key){
   const tbody = document.getElementById('t_body');
   const rows = list.slice().reverse();
