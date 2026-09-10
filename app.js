@@ -436,7 +436,7 @@ async function renderTemp(setor){
 
   const content = document.getElementById('content');
   content.innerHTML = `
-    <div class="tag-note">Faixas ideais consideradas: Freezer −20°C a −12°C · Câmara/Antecâmara -20°C a -35°C · Banho-maria/Balcão quente 30°C a 40°C. Ajuste conforme o padrão do seu equipamento.</div>
+    <div class="tag-note">Faixas ideais consideradas: Freezer −20°C a 5°C · Câmara/Antecâmara -20°C a -35°C · Banho-maria/Balcão quente 30°C a 40°C. Ajuste conforme o padrão do seu equipamento.</div>
     <div class="card">
       <h2>Nova leitura</h2>
       <div class="form-grid">
@@ -455,21 +455,57 @@ async function renderTemp(setor){
     <div class="card">
       <h2>Histórico de leituras</h2>
       <div class="table-wrap"><table>
-        <thead><tr><th>Data</th><th>Horário</th><th>Equipamento</th><th>Temp.</th><th>Status</th><th>Responsável</th><th>Ação corretiva</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Horário</th><th>Equipamento</th><th>Temp.</th><th>Status</th><th>Responsável</th><th>Ação corretiva</th><th></th><th>Ações</th></tr></thead>
         <tbody id="t_body"></tbody>
       </table></div>
     </div>
   `;
-  document.getElementById('t_add').addEventListener('click', async ()=>{
-    const desligado = document.getElementById('t_desl').checked;
+  // 1. Criamos a "memória" de edição
+window.tempEditId = null; 
+
+document.getElementById('t_add').addEventListener('click', async () => {
+    const data = document.getElementById('t_data').value;
+    const hora = document.getElementById('t_hora').value;
     const equip = document.getElementById('t_equip').value;
     const temp = document.getElementById('t_temp').value;
+    const resp = document.getElementById('t_resp').value;
+    const acao = document.getElementById('t_acao').value;
+    const desligado = document.getElementById('t_desl').checked;
+
     let status = 'Desligado';
     if(!desligado){
       const range = TEMP_RANGES[equip];
       const tv = parseFloat(temp);
       status = (range && !isNaN(tv) && tv>=range[0] && tv<=range[1]) ? 'Dentro do padrão' : 'Fora do padrão';
     }
+
+    // Monta o pacote de dados. Se tiver ID na memória, usa ele. Se não, cria um novo (uid)
+    const registro = {
+      id: window.tempEditId ? window.tempEditId : uid(),
+      data, hora, equip, temp, desligado, status, resp, acao
+    };
+
+    // Puxa a lista lá da nuvem
+    let lista = await loadList('qg_temp_producao');
+
+    if (window.tempEditId) {
+       // MODO EDIÇÃO: Procura a linha antiga e substitui pelos dados novos
+       const index = lista.findIndex(i => i.id === window.tempEditId);
+       if(index !== -1) lista[index] = registro;
+       
+       window.tempEditId = null; // Limpa a memória
+       document.getElementById('t_add').innerText = 'Adicionar leitura'; // Volta o texto do botão
+    } else {
+       // MODO NOVO: Apenas adiciona no final da lista
+       lista.push(registro);
+    }
+
+    // Salva tudo na nuvem
+    await saveList('qg_temp_producao', lista);
+    
+    // Atualiza a tela (estou colocando um reload aqui para garantir que a tabela recarregue)
+    location.reload(); 
+});
     const rec = {
       id:uid(), data:document.getElementById('t_data').value, horario:document.getElementById('t_hora').value,
       equipamento:equip, temperatura: desligado ? 'DESL' : temp, status,
@@ -494,7 +530,8 @@ function paintTempTable(list, key){
       <td><span class="pill ${r.status==='Fora do padrão'?'nc':(r.status==='Desligado'?'neutral':'c')}">${r.status}</span></td>
       <td>${r.responsavel||'—'}</td><td>${r.acao_corretiva||'—'}</td>
       <td><button class="btn-del" onclick="__deleteTemp('${key}','${r.id}')">Excluir</button></td>
-    </tr>`).join('') : `<tr><td colspan="8" class="empty">Nenhuma leitura registrada ainda.</td></tr>`;
+      <td><button style="padding: 4px 8px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarTemp('${r.id}')">✏️ Editar</button></td>
+    </tr>`).join('') : `<tr><td colspan="9" class="empty">Nenhuma leitura registrada ainda.</td></tr>`;
 }
 window.__deleteTemp = async (key,id)=>{
   const list = (await loadList(key)).filter(r=>r.id!==id);
@@ -1266,6 +1303,30 @@ window.__deleteHigiene = async (id)=>{
   const list = (await loadList('qg_higiene')).filter(r=>r.id!==id);
   await saveList('qg_higiene', list);
   renderHigiene();
+};
+window.__editarTemp = async (idItem) => {
+    // Busca o lote específico
+    const lista = await loadList('qg_temp_producao');
+    const item = lista.find(i => i.id === idItem);
+    if(!item) return;
+
+    // Preenche as caixinhas de volta
+    document.getElementById('t_data').value = item.data || '';
+    document.getElementById('t_hora').value = item.hora || '';
+    document.getElementById('t_equip').value = item.equip || '';
+    document.getElementById('t_temp').value = item.temp || '';
+    document.getElementById('t_resp').value = item.resp || '';
+    document.getElementById('t_acao').value = item.acao || '';
+    document.getElementById('t_desl').checked = item.desligado || false;
+
+    // Salva o ID na memória e avisa o operador que ele está editando
+    window.tempEditId = item.id;
+    const btn = document.getElementById('t_add');
+    btn.innerText = '💾 Salvar Edição';
+    btn.style.backgroundColor = 'var(--amber)'; // Fica laranja para chamar atenção
+    
+    // Sobe a tela para o topo para o operador ver o formulário
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 /* ============ BACKUP E LIMPEZA ============ */
 window.__downloadBackup = async () => {
