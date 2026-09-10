@@ -436,7 +436,7 @@ async function renderTemp(setor){
 
   const content = document.getElementById('content');
   content.innerHTML = `
-    <div class="tag-note">Faixas ideais consideradas: Freezer −20°C a −12°C · Câmara/Antecâmara -20°C a -30°C · Banho-maria/Balcão quente 30°C a 40°C. Ajuste conforme o padrão do seu equipamento.</div>
+    <div class="tag-note">Faixas ideais consideradas: Freezer −20°C a −12°C · Câmara/Antecâmara -20°C a -35°C · Banho-maria/Balcão quente 30°C a 40°C. Ajuste conforme o padrão do seu equipamento.</div>
     <div class="card">
       <h2>Nova leitura</h2>
       <div class="form-grid">
