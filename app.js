@@ -517,6 +517,10 @@ document.getElementById('t_add').addEventListener('click', async () => {
     const ok = await saveList(key, freshList);
     if(!ok){ showSaveError(); return; }
     renderTemp(setor);
+
+
+    const list = await loadList(key);
+paintTempTable(list, key);
   };
   paintTempTable(list, key);
 
@@ -530,8 +534,7 @@ function paintTempTable(list, key){
       <td><span class="pill ${r.status==='Fora do padrão'?'nc':(r.status==='Desligado'?'neutral':'c')}">${r.status}</span></td>
       <td>${r.responsavel||'—'}</td><td>${r.acao_corretiva||'—'}</td>
       <td><button class="btn-del" onclick="__deleteTemp('${key}','${r.id}')">Excluir</button></td>
-      <td><button style="padding: 4px 8px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarTemp('${r.id}')">✏️ Editar</button></td>
-    </tr>`).join('') : `<tr><td colspan="9" class="empty">Nenhuma leitura registrada ainda.</td></tr>`;
+    </tr>`).join('') : `<tr><td colspan="8" class="empty">Nenhuma leitura registrada ainda.</td></tr>`;
 }
 window.__deleteTemp = async (key,id)=>{
   const list = (await loadList(key)).filter(r=>r.id!==id);
