@@ -518,11 +518,8 @@ document.getElementById('t_add').addEventListener('click', async () => {
     if(!ok){ showSaveError(); return; }
     renderTemp(setor);
 
-
-    const list = await loadList(key);
-paintTempTable(list, key);
-  };
-  paintTempTable(list, key);
+};
+  
 
 function paintTempTable(list, key){
   const tbody = document.getElementById('t_body');
