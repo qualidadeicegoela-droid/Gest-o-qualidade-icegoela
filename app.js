@@ -436,14 +436,14 @@ async function renderTemp(setor){
 
   const content = document.getElementById('content');
   content.innerHTML = `
-    <div class="tag-note">Faixas ideais consideradas: Freezer −18°C a −12°C · Câmara/Antecâmara 0°C a 4°C · Banho-maria/Balcão quente 80°C a 90°C. Ajuste conforme o padrão do seu equipamento.</div>
+    <div class="tag-note">Faixas ideais consideradas: Freezer −20°C a −12°C · Câmara/Antecâmara -20°C a -30°C · Banho-maria/Balcão quente 30°C a 40°C. Ajuste conforme o padrão do seu equipamento.</div>
     <div class="card">
       <h2>Nova leitura</h2>
       <div class="form-grid">
         <div class="field"><label>Data</label><input type="date" id="t_data" value="${todayISO()}"></div>
         <div class="field"><label>Horário</label><input type="time" id="t_hora"></div>
         <div class="field"><label>Equipamento</label><select id="t_equip">${equipList.map(e=>`<option>${e}</option>`).join('')}</select></div>
-        <div class="field"><label>Temperatura (°C)</label><input type="number" step="0.1" id="t_temp"></div>
+        <div class="field"><label>Temperatura (°C)</label><input type="text" step="0.1" id="t_temp"></div>
         <div class="field"><label>Responsável</label><input type="text" id="t_resp"></div>
         <div class="field wide"><label>Ação corretiva (se fora do padrão)</label><input type="text" id="t_acao"></div>
       </div>
