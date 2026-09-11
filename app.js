@@ -1252,35 +1252,43 @@ async function renderSaborizacao(){
     const freshList = await loadList(key);
 
     if (idEditando) {
-        // EDITA A FICHA
+        // --- MODO EDIÇÃO ---
         const index = freshList.findIndex(i => i.id === idEditando);
         if (index !== -1) freshList[index] = rec;
         window.saborEditId = null;
-    } else {
-        // NOVA FICHA
-        freshList.push(rec);
+
+        // 1. Apaga os movimentos antigos dessa ficha no Estoque
+        const movs = (await loadList('qg_estoque_mov')).filter(m => m.saborId !== idEditando);
+        await saveList('qg_estoque_mov', movs);
         
-        // SÓ DÁ BAIXA AUTOMÁTICA NO ESTOQUE SE FOR UMA FICHA NOVA
-        for(const i of ingredientes){
-          const q = parseFloat(i.quantidade);
-          if(q>0){
-            await addMovement({
-              id:uid(), data, produto:i.ingrediente, unidade:i.unidade, tipo:'saida', quantidade:q,
-              origem:'Saborização', responsavel:i.responsavel||operador, saborId:rec.id,
-              observacao:`Uso no lote ${lote} (${produto})`+(i.lote?` — lote do ingrediente: ${i.lote}`:'')
-            });
-          }
-        }
-        for(const e of embalagens){
-          const q = parseFloat(e.quantidade);
-          if(q>0){
-            await addMovement({
-              id:uid(), data, produto:e.embalagem, unidade:e.unidade, tipo:'saida', quantidade:q,
-              origem:'Saborização', responsavel:e.responsavel||operador, saborId:rec.id,
-              observacao:`Uso no lote ${lote} (${produto})`+(e.lote?` — lote da embalagem: ${e.lote}`:'')
-            });
-          }
-        }
+        // 2. Força o estoque a recalcular os saldos sem aqueles movimentos velhos
+        await recalcStockFromMovements();
+    } else {
+        // --- MODO NOVA FICHA ---
+        freshList.push(rec);
+    }
+
+    // --- LANÇAMENTO NO ESTOQUE (Roda tanto no Novo quanto na Edição) ---
+    // Como apagamos os velhos na edição, o sistema lança tudo "fresquinho" com os valores atualizados!
+    for(const i of ingredientes){
+      const q = parseFloat(i.quantidade);
+      if(q>0){
+        await addMovement({
+          id:uid(), data, produto:i.ingrediente, unidade:i.unidade, tipo:'saida', quantidade:q,
+          origem:'Saborização', responsavel:i.responsavel||operador, saborId:rec.id,
+          observacao:`Uso no lote ${lote} (${produto})`+(i.lote?` — lote do ingrediente: ${i.lote}`:'')
+        });
+      }
+    }
+    for(const e of embalagens){
+      const q = parseFloat(e.quantidade);
+      if(q>0){
+        await addMovement({
+          id:uid(), data, produto:e.embalagem, unidade:e.unidade, tipo:'saida', quantidade:q,
+          origem:'Saborização', responsavel:e.responsavel||operador, saborId:rec.id,
+          observacao:`Uso no lote ${lote} (${produto})`+(e.lote?` — lote da embalagem: ${e.lote}`:'')
+        });
+      }
     }
 
     const ok = await saveList(key, freshList);
