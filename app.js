@@ -506,14 +506,31 @@ document.getElementById('t_add').addEventListener('click', async () => {
     // Atualiza a tela (estou colocando um reload aqui para garantir que a tabela recarregue)
     location.reload(); 
 });
-    const rec = {
-      id:uid(), data:document.getElementById('t_data').value, horario:document.getElementById('t_hora').value,
-      equipamento:equip, temperatura: desligado ? 'DESL' : temp, status,
-      responsavel:document.getElementById('t_resp').value, acao_corretiva:document.getElementById('t_acao').value,
+   const rec = {
+      id: window.tempEditId ? window.tempEditId : uid(), 
+      data: document.getElementById('t_data').value, 
+      horario: document.getElementById('t_hora').value,
+      equipamento: document.getElementById('t_equip').value, 
+      temperatura: desligado ? 'DESL' : document.getElementById('t_temp').value, 
+      status,
+      responsavel: document.getElementById('t_resp').value, 
+      acao_corretiva: document.getElementById('t_acao').value,
     };
-    if(!rec.data) return;
-    const freshList = await loadList(key);
-    freshList.push(rec);
+
+    // Verifica se é uma Edição ou uma Leitura Nova
+    if (window.tempEditId) {
+        const index = freshList.findIndex(i => i.id === window.tempEditId);
+        if (index !== -1) freshList[index] = rec;
+        
+        // Limpa a memória e volta o botão ao normal
+        window.tempEditId = null; 
+        document.getElementById('t_add').innerText = 'Adicionar leitura'; 
+        document.getElementById('t_add').style.backgroundColor = '';
+    } else {
+        // Se for novo, só adiciona no final da lista
+        freshList.push(rec);
+    }
+
     const ok = await saveList(key, freshList);
     if(!ok){ showSaveError(); return; }
     renderTemp(setor);
