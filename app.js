@@ -522,7 +522,7 @@ document.getElementById('t_add').addEventListener('click', async () => {
           status = (range && !isNaN(tv) && tv>=range[0] && tv<=range[1]) ? 'Dentro do padrão' : 'Fora do padrão';
         }
 
-        // 3. Monta o pacote de dados
+        // 3. Monta o pacote de dados com os nomes certinhos
         const rec = {
           id: window.tempEditId ? window.tempEditId : uid(),
           data: document.getElementById('t_data').value,
@@ -542,6 +542,7 @@ document.getElementById('t_add').addEventListener('click', async () => {
             const index = freshList.findIndex(i => i.id === window.tempEditId);
             if (index !== -1) freshList[index] = rec;
             
+            // Limpa a memória e volta o botão ao normal
             window.tempEditId = null;
             document.getElementById('t_add').innerText = 'Adicionar leitura';
             document.getElementById('t_add').style.backgroundColor = '';
@@ -555,10 +556,11 @@ document.getElementById('t_add').addEventListener('click', async () => {
         
         renderTemp(setor);
         
-    }; // <--- Essa é a chave de ouro que fecha o clique do botão e impede o loop!
+    }; 
+}; // <-- Essa chave fecha a função principal de renderizar a tela (renderTemp)
 
-};
-  
+
+// --- FUNÇÕES DA TABELA (COM O BOTÃO EDITAR DE VOLTA) ---
 
 function paintTempTable(list, key){
   const tbody = document.getElementById('t_body');
@@ -569,13 +571,17 @@ function paintTempTable(list, key){
       <td>${r.temperatura}${r.temperatura!=='DESL'?'°C':''}</td>
       <td><span class="pill ${r.status==='Fora do padrão'?'nc':(r.status==='Desligado'?'neutral':'c')}">${r.status}</span></td>
       <td>${r.responsavel||'—'}</td><td>${r.acao_corretiva||'—'}</td>
-      <td><button class="btn-del" onclick="__deleteTemp('${key}','${r.id}')">Excluir</button></td>
+      <td>
+         <button class="btn-del" onclick="__deleteTemp('${key}','${r.id}')">Excluir</button>
+         <button style="padding: 4px 8px; margin-left: 4px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarTemp('${r.id}')">✏️ Editar</button>
+      </td>
     </tr>`).join('') : `<tr><td colspan="8" class="empty">Nenhuma leitura registrada ainda.</td></tr>`;
 }
-window.__deleteTemp = async (key,id)=>{
+
+window.__deleteTemp = async (key, id)=>{
   const list = (await loadList(key)).filter(r=>r.id!==id);
   await saveList(key, list);
-  route(key==='qg_temp_producao'?'temp_producao':'temp_expedicao');
+  route(key==='qg_temp_producao' ? 'temp_producao' : 'temp_expedicao');
 };
 
 /* ============ RECEBIMENTO ============ */
