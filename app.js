@@ -508,7 +508,13 @@ document.getElementById('t_add').addEventListener('click', async () => {
 });
  // A trava de segurança: Tudo que está aqui dentro SÓ roda ao clicar no botão
     document.getElementById('t_add').onclick = async () => {
+        const btn = document.getElementById('t_add');
+        btn.disabled = true; // BLINDAGEM 1: Trava o botão para impedir duplo clique
+        btn.innerText = 'Salvando...';
         
+        // BLINDAGEM 2: Salva o ID numa variável blindada que não se perde no meio do caminho
+        const idEditando = window.tempEditId;
+
         // 1. Lê os campos principais
         const desligado = document.getElementById('t_desl').checked;
         const equipamento = document.getElementById('t_equip').value;
@@ -522,9 +528,9 @@ document.getElementById('t_add').addEventListener('click', async () => {
           status = (range && !isNaN(tv) && tv>=range[0] && tv<=range[1]) ? 'Dentro do padrão' : 'Fora do padrão';
         }
 
-        // 3. Monta o pacote de dados com os nomes certinhos
+        // 3. Monta o pacote de dados usando o ID blindado
         const rec = {
-          id: window.tempEditId ? window.tempEditId : uid(),
+          id: idEditando ? idEditando : uid(),
           data: document.getElementById('t_data').value,
           horario: document.getElementById('t_hora').value,
           equipamento: equipamento,
@@ -537,24 +543,30 @@ document.getElementById('t_add').addEventListener('click', async () => {
         // 4. Puxa a lista da nuvem
         let freshList = await loadList(key);
 
-        // 5. Salva ou Edita
-        if (window.tempEditId) {
-            const index = freshList.findIndex(i => i.id === window.tempEditId);
+        // 5. Salva ou Edita de verdade usando o ID blindado
+        if (idEditando) {
+            const index = freshList.findIndex(i => i.id === idEditando);
             if (index !== -1) freshList[index] = rec;
             
-            // Limpa a memória e volta o botão ao normal
+            // Limpa a memória global
             window.tempEditId = null;
-            document.getElementById('t_add').innerText = 'Adicionar leitura';
-            document.getElementById('t_add').style.backgroundColor = '';
         } else {
             freshList.push(rec);
         }
 
-        // 6. Envia pra nuvem e recarrega a tela
+        // 6. Envia pra nuvem
         const ok = await saveList(key, freshList);
+        
+        // Devolve o botão ao normal
+        btn.disabled = false;
+        btn.innerText = 'Adicionar leitura';
+        btn.style.backgroundColor = '';
+
         if(!ok){ showSaveError(); return; }
         
+        // Recarrega a tela
         renderTemp(setor);
+    };
         
     }; 
     loadList(key).then(listaAtual => {
