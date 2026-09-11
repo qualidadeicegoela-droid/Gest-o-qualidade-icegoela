@@ -530,7 +530,7 @@ document.getElementById('t_add').addEventListener('click', async () => {
       responsavel: document.getElementById('t_resp').value,
       acao_corretiva: document.getElementById('t_acao').value,
     };
-
+let freshList = await loadList(key);
     // 4. Salva ou Edita
     if (window.tempEditId) {
         const index = freshList.findIndex(i => i.id === window.tempEditId);
