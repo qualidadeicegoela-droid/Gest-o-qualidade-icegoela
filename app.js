@@ -568,11 +568,11 @@ document.getElementById('t_add').addEventListener('click', async () => {
         renderTemp(setor);
     };
         
-    }; 
+    
     loadList(key).then(listaAtual => {
         paintTempTable(listaAtual, key);
     });
-}; // <-- Essa chave fecha a função principal de renderizar a tela (renderTemp)
+  }; // <-- Essa chave fecha a função principal de renderizar a tela (renderTemp)
 
 
 // --- FUNÇÕES DA TABELA (COM O BOTÃO EDITAR DE VOLTA) ---
