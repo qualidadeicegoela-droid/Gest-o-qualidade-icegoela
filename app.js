@@ -741,22 +741,22 @@ function paintRecTable(list, filterTipo){
   const pill = v => v==='C' ? '<span class="pill c">C</span>' : v==='NC' ? '<span class="pill nc">NC</span>' : '—';
   
   tbody.innerHTML = rows.length ? rows.map(r=>`
-    <!-- LINHA PRINCIPAL -->
     <tr>
       <td>${fmtDate(r.data)}</td><td>${r.tipo}</td><td>${r.produto}</td><td>${r.qtd||'—'}</td><td>${r.unidade||'—'}</td><td>${r.fornecedor||'—'}</td>
       <td>${fmtDate(r.validade)}</td><td>${pill(r.transporte)}</td><td>${pill(r.embalagem)}</td><td>${pill(r.produtos)}</td>
       <td>${r.responsavel||'—'}</td>
-      <td style="display: flex; gap: 4px;">
-         <button style="padding: 4px 8px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__toggleDetalhesRec('${r.id}')">👁️ Detalhes</button>
-         <button class="btn-edit" onclick="__editarRec('${key}', '${r.id}')">Editar</button>
-         <button class="btn-del" onclick="__deleteRec('${r.id}')">Excluir</button>
+      <td>
+        <div style="display: flex; gap: 4px;">
+           <button class="btn btn-ghost btn-sm" onclick="__toggleDetalhesRec('${r.id}')">Detalhes</button>
+           <button class="btn-edit" onclick="__editarRec('${r.id}')">Editar</button>
+           <button class="btn-del" onclick="__deleteRec('${r.id}')">Excluir</button>
+        </div>
       </td>
     </tr>
-    <!-- LINHA ESCONDIDA DE DETALHES -->
     <tr id="det_${r.id}" style="display: none;">
       <td colspan="12" style="padding: 12px; background-color: #fafafa; border-bottom: 2px solid var(--line);">
         <div style="padding: 12px; border: 1px solid var(--line); border-radius: 6px; background-color: #fff; max-width: 600px;">
-          <strong style="display: block; margin-bottom: 10px; color: var(--text);">Informações Adicionais da Ficha</strong>
+          <strong style="display: block; margin-bottom: 10px; color: var(--ink);">Informações Adicionais da Ficha</strong>
           <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.95em;">
              <tr style="border-bottom: 1px solid #eee;">
                <th style="padding: 6px 0; width: 30%;">Lote / Fabricação:</th><td style="padding: 6px 0;">${r.lote || '—'}</td>
@@ -768,7 +768,7 @@ function paintRecTable(list, filterTipo){
                <th style="padding: 6px 0;">Registro SIF:</th><td style="padding: 6px 0;">${r.sif || '—'}</td>
              </tr>
              <tr>
-               <th style="padding: 6px 0;">Ação Corretiva:</th><td style="padding: 6px 0; color: #d32f2f;"><strong>${r.acao_corretiva || '—'}</strong></td>
+               <th style="padding: 6px 0;">Ação Corretiva:</th><td style="padding: 6px 0; color: var(--coral);"><strong>${r.acao_corretiva || '—'}</strong></td>
              </tr>
           </table>
         </div>
