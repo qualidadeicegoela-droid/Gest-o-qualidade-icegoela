@@ -1363,7 +1363,7 @@ function paintSaborHist(list){
       <td>
         <div style="display: flex; gap: 4px;">
           <button class="btn btn-ghost btn-sm" onclick="__toggleSaborDetail('${r.id}')">Detalhes</button>
-          <button class="btn-edit" onclick="__editarSabor('${key}', '${r.id}')">Editar</button>
+           <button class="btn-edit" onclick="__editarRec('${r.id}')">Editar</button>
           <button class="btn-del" onclick="__deleteSabor('${r.id}')">Excluir</button>
         </div>
       </td>
