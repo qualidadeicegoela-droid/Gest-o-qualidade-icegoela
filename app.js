@@ -735,16 +735,42 @@ function paintRecTable(list, filterTipo){
   const tbody = document.getElementById('r_body');
   const rows = list.filter(r=>!filterTipo || r.tipo===filterTipo).slice().reverse();
   const pill = v => v==='C' ? '<span class="pill c">C</span>' : v==='NC' ? '<span class="pill nc">NC</span>' : '—';
+  
   tbody.innerHTML = rows.length ? rows.map(r=>`
+    <!-- LINHA PRINCIPAL -->
     <tr>
       <td>${fmtDate(r.data)}</td><td>${r.tipo}</td><td>${r.produto}</td><td>${r.qtd||'—'}</td><td>${r.unidade||'—'}</td><td>${r.fornecedor||'—'}</td>
       <td>${fmtDate(r.validade)}</td><td>${pill(r.transporte)}</td><td>${pill(r.embalagem)}</td><td>${pill(r.produtos)}</td>
       <td>${r.responsavel||'—'}</td>
-      <td>
+      <td style="display: flex; gap: 4px;">
+         <button style="padding: 4px 8px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__toggleDetalhesRec('${r.id}')">👁️ Detalhes</button>
+         <button style="padding: 4px 8px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarRec('${r.id}')">✏️ Editar</button>
          <button class="btn-del" onclick="__deleteRec('${r.id}')">Excluir</button>
-         <button style="padding: 4px 8px; margin-left: 4px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarRec('${r.id}')">✏️ Editar</button>
       </td>
-    </tr>`).join('') : `<tr><td colspan="12" class="empty">Nenhum recebimento registrado ainda.</td></tr>`;
+    </tr>
+    <!-- LINHA ESCONDIDA DE DETALHES -->
+    <tr id="det_${r.id}" style="display: none;">
+      <td colspan="12" style="padding: 12px; background-color: #fafafa; border-bottom: 2px solid var(--line);">
+        <div style="padding: 12px; border: 1px solid var(--line); border-radius: 6px; background-color: #fff; max-width: 600px;">
+          <strong style="display: block; margin-bottom: 10px; color: var(--text);">Informações Adicionais da Ficha</strong>
+          <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.95em;">
+             <tr style="border-bottom: 1px solid #eee;">
+               <th style="padding: 6px 0; width: 30%;">Lote / Fabricação:</th><td style="padding: 6px 0;">${r.lote || '—'}</td>
+             </tr>
+             <tr style="border-bottom: 1px solid #eee;">
+               <th style="padding: 6px 0;">Temperatura:</th><td style="padding: 6px 0;">${r.temperatura ? r.temperatura + ' °C' : '—'}</td>
+             </tr>
+             <tr style="border-bottom: 1px solid #eee;">
+               <th style="padding: 6px 0;">Registro SIF:</th><td style="padding: 6px 0;">${r.sif || '—'}</td>
+             </tr>
+             <tr>
+               <th style="padding: 6px 0;">Ação Corretiva:</th><td style="padding: 6px 0; color: #d32f2f;"><strong>${r.acao_corretiva || '—'}</strong></td>
+             </tr>
+          </table>
+        </div>
+      </td>
+    </tr>
+    `).join('') : `<tr><td colspan="12" class="empty">Nenhum recebimento registrado ainda.</td></tr>`;
 }
 window.__deleteRec = async (id)=>{
   const list = (await loadList('qg_recebimento')).filter(r=>r.id!==id);
@@ -1488,6 +1514,15 @@ window.__editarRec = async (idItem) => {
     btn.style.backgroundColor = 'var(--amber)'; 
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+// --- ABRE E FECHA OS DETALHES (Recebimento) ---
+window.__toggleDetalhesRec = (id) => {
+    const linhaDetalhe = document.getElementById(`det_${id}`);
+    if (linhaDetalhe.style.display === 'none') {
+        linhaDetalhe.style.display = 'table-row'; // Abre a gaveta
+    } else {
+        linhaDetalhe.style.display = 'none'; // Fecha a gaveta
+    }
 };
 /* ============ BACKUP E LIMPEZA ============ */
 window.__downloadBackup = async () => {
