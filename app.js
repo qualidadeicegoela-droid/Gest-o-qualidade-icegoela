@@ -658,7 +658,7 @@ async function renderRecebimento(){
   document.getElementById('r_tipo').addEventListener('change', toggleTipoFields);
   toggleTipoFields();
 
- // --- BOTÃO BLINDADO (Recebimento) ---
+ // --- BOTÃO BLINDADO E INTEGRADO AO ESTOQUE (Recebimento) ---
   document.getElementById('r_add').onclick = async () => {
     const btn = document.getElementById('r_add');
     btn.disabled = true; 
@@ -697,26 +697,31 @@ async function renderRecebimento(){
     const freshList = await loadList(key);
 
     if (idEditando) {
-        // EDITA O RECEBIMENTO
+        // --- MODO EDIÇÃO ---
         const index = freshList.findIndex(i => i.id === idEditando);
         if (index !== -1) freshList[index] = rec;
         window.recEditId = null;
 
-        // SE FOR EDIÇÃO, NÃO LANÇAMOS AUTOMATICAMENTE NO ESTOQUE DE NOVO 
-        // (Apenas salvamos a correção na ficha de recebimento)
-    } else {
-        // NOVO RECEBIMENTO
-        freshList.push(rec);
+        // 1. Apaga a entrada antiga desse recebimento no Estoque
+        const movs = (await loadList('qg_estoque_mov')).filter(m => m.recId !== idEditando);
+        await saveList('qg_estoque_mov', movs);
         
-        // SÓ ADICIONA NO ESTOQUE SE FOR UMA ENTRADA NOVA
-        const qtdNum = parseFloat(rec.qtd);
-        if(qtdNum > 0){
-          await addMovement({
-            id: uid(), data: rec.data, produto: rec.produto, unidade: rec.unidade, tipo: 'entrada',
-            quantidade: qtdNum, origem: 'Recebimento', responsavel: rec.responsavel, recId: rec.id,
-            observacao: 'Entrada automática via recebimento' + (rec.fornecedor ? ' — ' + rec.fornecedor : '')
-          });
-        }
+        // 2. Força o estoque a recalcular os saldos sem aquela entrada velha
+        await recalcStockFromMovements();
+    } else {
+        // --- MODO NOVO RECEBIMENTO ---
+        freshList.push(rec);
+    }
+
+    // --- LANÇAMENTO NO ESTOQUE (Roda tanto no Novo quanto na Edição) ---
+    // Ele joga a quantidade fresquinha que você acabou de digitar lá pro estoque!
+    const qtdNum = parseFloat(rec.qtd);
+    if(qtdNum > 0){
+      await addMovement({
+        id: uid(), data: rec.data, produto: rec.produto, unidade: rec.unidade, tipo: 'entrada',
+        quantidade: qtdNum, origem: 'Recebimento', responsavel: rec.responsavel, recId: rec.id,
+        observacao: 'Entrada automática via recebimento' + (rec.fornecedor ? ' — ' + rec.fornecedor : '')
+      });
     }
 
     const ok = await saveList(key, freshList);
