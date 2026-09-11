@@ -506,28 +506,40 @@ document.getElementById('t_add').addEventListener('click', async () => {
     // Atualiza a tela (estou colocando um reload aqui para garantir que a tabela recarregue)
     location.reload(); 
 });
-   const rec = {
-      id: window.tempEditId ? window.tempEditId : uid(), 
-      data: document.getElementById('t_data').value, 
+  // 1. Lê os campos principais antes de montar o pacote
+    const desligado = document.getElementById('t_desl').checked;
+    const equipamento = document.getElementById('t_equip').value;
+    const temperatura = document.getElementById('t_temp').value;
+
+    // 2. Calcula se está dentro ou fora do padrão
+    let status = 'Desligado';
+    if(!desligado){
+      const range = TEMP_RANGES[equipamento];
+      const tv = parseFloat(temperatura);
+      status = (range && !isNaN(tv) && tv>=range[0] && tv<=range[1]) ? 'Dentro do padrão' : 'Fora do padrão';
+    }
+
+    // 3. Monta o pacote de dados com os nomes certinhos pro banco
+    const rec = {
+      id: window.tempEditId ? window.tempEditId : uid(),
+      data: document.getElementById('t_data').value,
       horario: document.getElementById('t_hora').value,
-      equipamento: document.getElementById('t_equip').value, 
-      temperatura: desligado ? 'DESL' : document.getElementById('t_temp').value, 
-      status,
-      responsavel: document.getElementById('t_resp').value, 
+      equipamento: equipamento,
+      temperatura: desligado ? 'DESL' : temperatura,
+      status: status,
+      responsavel: document.getElementById('t_resp').value,
       acao_corretiva: document.getElementById('t_acao').value,
     };
 
-    // Verifica se é uma Edição ou uma Leitura Nova
+    // 4. Salva ou Edita
     if (window.tempEditId) {
         const index = freshList.findIndex(i => i.id === window.tempEditId);
         if (index !== -1) freshList[index] = rec;
         
-        // Limpa a memória e volta o botão ao normal
-        window.tempEditId = null; 
-        document.getElementById('t_add').innerText = 'Adicionar leitura'; 
+        window.tempEditId = null;
+        document.getElementById('t_add').innerText = 'Adicionar leitura';
         document.getElementById('t_add').style.backgroundColor = '';
     } else {
-        // Se for novo, só adiciona no final da lista
         freshList.push(rec);
     }
 
