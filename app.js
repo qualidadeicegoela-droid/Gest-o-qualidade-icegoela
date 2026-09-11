@@ -1211,14 +1211,26 @@ async function renderSaborizacao(){
   document.getElementById('sb_ing_add').addEventListener('click', ()=>ingRow());
   document.getElementById('sb_emb_add').addEventListener('click', ()=>embRow());
 
-  document.getElementById('sb_save').addEventListener('click', async ()=>{
+  // --- BOTÃO BLINDADO (Saborização) ---
+  document.getElementById('sb_save').onclick = async () => {
+    const btn = document.getElementById('sb_save');
+    btn.disabled = true;
+    btn.innerText = 'Salvando...';
+
+    const idEditando = window.saborEditId;
     const produto = document.getElementById('sb_produto').value.trim();
     const lote = document.getElementById('sb_lote').value.trim();
-    if(!produto || !lote) return;
+    
+    if(!produto || !lote) {
+       btn.disabled = false;
+       btn.innerText = idEditando ? '💾 Salvar Edição' : 'Salvar ficha';
+       alert('O Produto e o Lote (produto final) são obrigatórios!');
+       return;
+    }
+
     const data = document.getElementById('sb_data').value;
     const operador = document.getElementById('sb_operador').value;
-    
-    
+    const obs = document.getElementById('sab_obs').value;
 
     const ingredientes = Array.from(document.querySelectorAll('#sb_ing_body tr')).map(tr=>({
       ingrediente: tr.querySelector('.sb-i-nome').value.trim(),
@@ -1235,41 +1247,99 @@ async function renderSaborizacao(){
       lote: tr.querySelector('.sb-e-lote').value.trim(),
       responsavel: tr.querySelector('.sb-e-resp').value.trim(),
     })).filter(e=>e.embalagem);
-const obs = document.getElementById('sab_obs').value;
 
-    const rec = {id:uid(), data, produto, operador, lote, ingredientes, embalagens, obs: obs};
+    const rec = { id: idEditando ? idEditando : uid(), data, produto, operador, lote, ingredientes, embalagens, obs };
     const freshList = await loadList(key);
-    freshList.push(rec);
-    const ok = await saveList(key, freshList);
-    if(!ok){ showSaveError(); return; }
 
-    for(const i of ingredientes){
-      const q = parseFloat(i.quantidade);
-      if(q>0){
-        await addMovement({
-          id:uid(), data, produto:i.ingrediente, unidade:i.unidade, tipo:'saida', quantidade:q,
-          origem:'Saborização', responsavel:i.responsavel||operador, saborId:rec.id,
-          observacao:`Uso no lote ${lote} (${produto})`+(i.lote?` — lote do ingrediente: ${i.lote}`:'')
-        });
-      }
+    if (idEditando) {
+        // EDITA A FICHA
+        const index = freshList.findIndex(i => i.id === idEditando);
+        if (index !== -1) freshList[index] = rec;
+        window.saborEditId = null;
+    } else {
+        // NOVA FICHA
+        freshList.push(rec);
+        
+        // SÓ DÁ BAIXA AUTOMÁTICA NO ESTOQUE SE FOR UMA FICHA NOVA
+        for(const i of ingredientes){
+          const q = parseFloat(i.quantidade);
+          if(q>0){
+            await addMovement({
+              id:uid(), data, produto:i.ingrediente, unidade:i.unidade, tipo:'saida', quantidade:q,
+              origem:'Saborização', responsavel:i.responsavel||operador, saborId:rec.id,
+              observacao:`Uso no lote ${lote} (${produto})`+(i.lote?` — lote do ingrediente: ${i.lote}`:'')
+            });
+          }
+        }
+        for(const e of embalagens){
+          const q = parseFloat(e.quantidade);
+          if(q>0){
+            await addMovement({
+              id:uid(), data, produto:e.embalagem, unidade:e.unidade, tipo:'saida', quantidade:q,
+              origem:'Saborização', responsavel:e.responsavel||operador, saborId:rec.id,
+              observacao:`Uso no lote ${lote} (${produto})`+(e.lote?` — lote da embalagem: ${e.lote}`:'')
+            });
+          }
+        }
     }
-    for(const e of embalagens){
-      const q = parseFloat(e.quantidade);
-      if(q>0){
-        await addMovement({
-          id:uid(), data, produto:e.embalagem, unidade:e.unidade, tipo:'saida', quantidade:q,
-          origem:'Saborização', responsavel:e.responsavel||operador, saborId:rec.id,
-          observacao:`Uso no lote ${lote} (${produto})`+(e.lote?` — lote da embalagem: ${e.lote}`:'')
-        });
-      }
-    }
+
+    const ok = await saveList(key, freshList);
+    
+    btn.disabled = false;
+    btn.innerText = 'Salvar ficha';
+    btn.style.backgroundColor = '';
+
+    if(!ok){ showSaveError(); return; }
     renderSaborizacao();
-  });
+  };
+
+  // --- CÉREBRO DA EDIÇÃO (Fica aqui dentro para acessar as linhas dinâmicas) ---
+  window.__editarSabor = async (idItem) => {
+      const lista = await loadList(key);
+      const item = lista.find(i => i.id === idItem);
+      if(!item) return;
+
+      // 1. Preenche os campos principais
+      document.getElementById('sb_data').value = item.data || '';
+      document.getElementById('sb_produto').value = item.produto || '';
+      document.getElementById('sb_operador').value = item.operador || '';
+      document.getElementById('sb_lote').value = item.lote || '';
+      document.getElementById('sab_obs').value = item.obs || '';
+
+      // 2. Apaga as linhas em branco e recria com os ingredientes salvos
+      document.getElementById('sb_ing_body').innerHTML = '';
+      if(item.ingredientes && item.ingredientes.length > 0) {
+          item.ingredientes.forEach(i => ingRow(i));
+      } else {
+          ingRow(); 
+      }
+
+      // 3. Mesma coisa para as embalagens
+      document.getElementById('sb_emb_body').innerHTML = '';
+      if(item.embalagens && item.embalagens.length > 0) {
+          item.embalagens.forEach(e => embRow(e));
+      } else {
+          embRow();
+      }
+
+      // 4. Salva a memória e acende o botão
+      window.saborEditId = item.id;
+      const btn = document.getElementById('sb_save');
+      btn.innerText = '💾 Salvar Edição';
+      btn.style.backgroundColor = 'var(--amber)'; 
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   paintSaborHist(list);
   document.getElementById('sb_trace').addEventListener('input', e=>paintTrace(list, e.target.value));
   paintTrace(list, '');
-}
+} // <-- FECHA A FUNÇÃO renderSaborizacao()
+
+
+// ===============================================================
+// FUNÇÕES DA TABELA DE SABORIZAÇÃO (Fora do render principal)
+// ===============================================================
 
 function paintSaborHist(list){
   const tbody = document.getElementById('sb_hist_body');
@@ -1279,13 +1349,17 @@ function paintSaborHist(list){
       <td>${fmtDate(r.data)}</td><td>${r.produto}</td><td><b>${r.lote}</b></td><td>${r.operador||'—'}</td>
       <td>${r.ingredientes.length}</td><td>${r.embalagens.length}</td>
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="__toggleSaborDetail('${r.id}')">Detalhes</button>
-        <button class="btn-del" onclick="__deleteSabor('${r.id}')">Excluir</button>
+        <div style="display: flex; gap: 4px;">
+          <button class="btn btn-ghost btn-sm" onclick="__toggleSaborDetail('${r.id}')">Detalhes</button>
+          <button style="padding: 4px 8px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarSabor('${r.id}')">✏️ Editar</button>
+          <button class="btn-del" onclick="__deleteSabor('${r.id}')">Excluir</button>
+        </div>
       </td>
     </tr>
     <tr id="sb_detail_${r.id}" style="display:none;"><td colspan="7">${saborDetailHtml(r)}</td></tr>
   `).join('') : `<tr><td colspan="7" class="empty">Nenhuma ficha registrada ainda.</td></tr>`;
 }
+
 function saborDetailHtml(r, highlight){
   const h = (highlight||'').toLowerCase();
   const mark = (txt)=> (h && txt && txt.toLowerCase().includes(h)) ? `<span class="pill warn">${txt}</span>` : (txt||'—');
@@ -1302,10 +1376,12 @@ function saborDetailHtml(r, highlight){
     <tbody>${r.embalagens.map(e=>`<tr><td>${e.embalagem}</td><td>${e.quantidade||'—'} ${e.unidade||''}</td><td>${mark(e.lote)}</td><td>${e.responsavel||'—'}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">Sem embalagens registradas.</p>';
   return `<div style="padding:10px 4px;"><b>Ingredientes</b>${ing}<b>Embalagens</b>${emb}</div>`;
 }
+
 window.__toggleSaborDetail = (id)=>{
   const row = document.getElementById('sb_detail_'+id);
   if(row) row.style.display = row.style.display==='none' ? 'table-row' : 'none';
 };
+
 window.__deleteSabor = async (id)=>{
   const list = (await loadList('qg_saborizacao')).filter(r=>r.id!==id);
   await saveList('qg_saborizacao', list);
@@ -1314,6 +1390,7 @@ window.__deleteSabor = async (id)=>{
   await recalcStockFromMovements();
   renderSaborizacao();
 };
+
 function paintTrace(list, q){
   const wrap = document.getElementById('sb_trace_results');
   const term = (q||'').trim().toLowerCase();
