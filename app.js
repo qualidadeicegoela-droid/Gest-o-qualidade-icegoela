@@ -557,6 +557,9 @@ document.getElementById('t_add').addEventListener('click', async () => {
         renderTemp(setor);
         
     }; 
+    loadList(key).then(listaAtual => {
+        paintTempTable(listaAtual, key);
+    });
 }; // <-- Essa chave fecha a função principal de renderizar a tela (renderTemp)
 
 
