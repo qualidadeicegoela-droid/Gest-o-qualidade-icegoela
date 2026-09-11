@@ -576,7 +576,7 @@ function paintTempTable(list, key){
       <td>${r.responsavel||'—'}</td><td>${r.acao_corretiva||'—'}</td>
       <td>
          <button class="btn-del" onclick="__deleteTemp('${key}','${r.id}')">Excluir</button>
-         <button style="padding: 4px 8px; margin-left: 4px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarTemp('${r.id}')">✏️ Editar</button>
+         <button style="padding: 4px 8px; margin-left: 4px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarTemp('${key}', '${r.id}')">✏️ Editar</button>
       </td>
     </tr>`).join('') : `<tr><td colspan="8" class="empty">Nenhuma leitura registrada ainda.</td></tr>`;
 }
@@ -1352,28 +1352,36 @@ window.__deleteHigiene = async (id)=>{
   await saveList('qg_higiene', list);
   renderHigiene();
 };
-window.__editarTemp = async (idItem) => {
-    // Busca o lote específico
-    const lista = await loadList('qg_temp_producao');
+window.__editarTemp = async (key, idItem) => {
+    // Busca a lista da aba correta (Produção ou Expedição)
+    const lista = await loadList(key);
     const item = lista.find(i => i.id === idItem);
     if(!item) return;
 
-    // Preenche as caixinhas de volta
+    // Preenche as caixinhas usando os nomes CERTOS do seu banco de dados
     document.getElementById('t_data').value = item.data || '';
-    document.getElementById('t_hora').value = item.hora || '';
-    document.getElementById('t_equip').value = item.equip || '';
-    document.getElementById('t_temp').value = item.temp || '';
-    document.getElementById('t_resp').value = item.resp || '';
-    document.getElementById('t_acao').value = item.acao || '';
-    document.getElementById('t_desl').checked = item.desligado || false;
+    document.getElementById('t_hora').value = item.horario || '';
+    document.getElementById('t_equip').value = item.equipamento || '';
+    
+    // Confere se estava desligado para marcar a caixinha certa
+    if (item.temperatura === 'DESL') {
+        document.getElementById('t_desl').checked = true;
+        document.getElementById('t_temp').value = '';
+    } else {
+        document.getElementById('t_desl').checked = false;
+        document.getElementById('t_temp').value = item.temperatura || '';
+    }
 
-    // Salva o ID na memória e avisa o operador que ele está editando
+    document.getElementById('t_resp').value = item.responsavel || '';
+    document.getElementById('t_acao').value = item.acao_corretiva || '';
+
+    // Salva o ID na memória e muda o botão de Adicionar para Salvar
     window.tempEditId = item.id;
     const btn = document.getElementById('t_add');
     btn.innerText = '💾 Salvar Edição';
-    btn.style.backgroundColor = 'var(--amber)'; // Fica laranja para chamar atenção
+    btn.style.backgroundColor = 'var(--amber)'; 
     
-    // Sobe a tela para o topo para o operador ver o formulário
+    // Sobe a tela suavemente para o operador ver o formulário
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 /* ============ BACKUP E LIMPEZA ============ */
