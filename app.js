@@ -588,8 +588,7 @@ function paintTempTable(list, key){
       <td>${r.responsavel||'—'}</td><td>${r.acao_corretiva||'—'}</td>
       <td>
          <button class="btn-del" onclick="__deleteTemp('${key}','${r.id}')">Excluir</button>
-         <button style="padding: 4px 8px; margin-left: 4px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarTemp('${key}', '${r.id}')">✏️ Editar</button>
-      </td>
+         <button class="btn-edit" onclick="__editarTemp('${key}', '${r.id}')">Editar</button>      </td>
     </tr>`).join('') : `<tr><td colspan="8" class="empty">Nenhuma leitura registrada ainda.</td></tr>`;
 }
 
@@ -749,7 +748,7 @@ function paintRecTable(list, filterTipo){
       <td>${r.responsavel||'—'}</td>
       <td style="display: flex; gap: 4px;">
          <button style="padding: 4px 8px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__toggleDetalhesRec('${r.id}')">👁️ Detalhes</button>
-         <button style="padding: 4px 8px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarRec('${r.id}')">✏️ Editar</button>
+         <button class="btn-edit" onclick="__editarRec('${key}', '${r.id}')">Editar</button>
          <button class="btn-del" onclick="__deleteRec('${r.id}')">Excluir</button>
       </td>
     </tr>
@@ -1364,7 +1363,7 @@ function paintSaborHist(list){
       <td>
         <div style="display: flex; gap: 4px;">
           <button class="btn btn-ghost btn-sm" onclick="__toggleSaborDetail('${r.id}')">Detalhes</button>
-          <button style="padding: 4px 8px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarSabor('${r.id}')">✏️ Editar</button>
+          <button class="btn-edit" onclick="__editarSabor('${key}', '${r.id}')">Editar</button>
           <button class="btn-del" onclick="__deleteSabor('${r.id}')">Excluir</button>
         </div>
       </td>
