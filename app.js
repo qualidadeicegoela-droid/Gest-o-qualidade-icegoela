@@ -729,7 +729,6 @@ function paintRecTable(list, filterTipo){
       <td>${fmtDate(r.data)}</td><td>${r.tipo}</td><td>${r.produto}</td><td>${r.qtd||'—'}</td><td>${r.unidade||'—'}</td><td>${r.fornecedor||'—'}</td>
       <td>${fmtDate(r.validade)}</td><td>${pill(r.transporte)}</td><td>${pill(r.embalagem)}</td><td>${pill(r.produtos)}</td>
       <td>${r.responsavel||'—'}</td>
-      // (Substitua a linha do botão na tabela por esta:)
       <td>
          <button class="btn-del" onclick="__deleteRec('${r.id}')">Excluir</button>
          <button style="padding: 4px 8px; margin-left: 4px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarRec('${r.id}')">✏️ Editar</button>
