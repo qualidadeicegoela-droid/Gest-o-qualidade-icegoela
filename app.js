@@ -611,7 +611,11 @@ async function renderRecebimento(){
       <div class="form-grid">
         <div class="field"><label>Data</label><input type="date" id="r_data" value="${todayISO()}"></div>
         <div class="field"><label>Tipo</label><select id="r_tipo"><option>Perecível</option><option>Seco</option></select></div>
-        <div class="field"><label>Produto</label><input type="text" id="r_produto"></div>
+        <div class="field">
+    <label>Produto</label>
+    <input type="text" id="r_produto" list="r_lista_produtos" autocomplete="off">
+    <datalist id="r_lista_produtos"></datalist>
+</div>
         <div class="field"><label>Quantidade</label><input type="number" step="0.01" id="r_qtd"></div>
         <div class="field"><label>Unidade</label><select id="r_unidade">${UNIDADES.map(u=>`<option>${u}</option>`).join('')}</select></div>
         <div class="field"><label>Fornecedor</label><input type="text" id="r_fornecedor"></div>
@@ -639,6 +643,13 @@ async function renderRecebimento(){
       </table></div>
     </div>
   `;
+  // --- PUXA O HISTÓRICO DE PRODUTOS PARA O AUTOCOMPLETE ---
+  const estoqueAtual = await loadList('qg_estoque');
+  // Pega apenas os nomes dos produtos, tira os repetidos e coloca em ordem alfabética
+  const produtosUnicos = [...new Set(estoqueAtual.map(item => item.produto))].filter(Boolean).sort();
+  
+  // Injeta esses nomes lá no nosso <datalist>
+  document.getElementById('r_lista_produtos').innerHTML = produtosUnicos.map(p => `<option value="${p}">`).join('');
   function toggleTipoFields(){
     const show = document.getElementById('r_tipo').value === 'Perecível';
     document.getElementById('r_temp_wrap').style.display = show?'flex':'none';
