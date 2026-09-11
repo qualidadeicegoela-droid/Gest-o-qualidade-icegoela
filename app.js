@@ -647,32 +647,76 @@ async function renderRecebimento(){
   document.getElementById('r_tipo').addEventListener('change', toggleTipoFields);
   toggleTipoFields();
 
-  document.getElementById('r_add').addEventListener('click', async ()=>{
-    const rec = {
-      id:uid(), data:document.getElementById('r_data').value, tipo:document.getElementById('r_tipo').value,
-      produto:document.getElementById('r_produto').value, qtd:document.getElementById('r_qtd').value,
-      unidade:document.getElementById('r_unidade').value,
-      fornecedor:document.getElementById('r_fornecedor').value, lote:document.getElementById('r_lote').value,
-      validade:document.getElementById('r_validade').value, transporte:document.getElementById('r_transporte').value,
-      temperatura:document.getElementById('r_temp').value, sif:document.getElementById('r_sif').value,
-      embalagem:document.getElementById('r_embalagem').value, produtos:document.getElementById('r_produtos').value,
-      responsavel:document.getElementById('r_resp').value, acao_corretiva:document.getElementById('r_acao').value,
-    };
-    if(!rec.produto) return;
-    const freshList = await loadList(key);
-    freshList.push(rec);
-    const ok = await saveList(key, freshList);
-    if(!ok){ showSaveError(); return; }
-    const qtdNum = parseFloat(rec.qtd);
-    if(qtdNum > 0){
-      await addMovement({
-        id:uid(), data:rec.data, produto:rec.produto, unidade:rec.unidade, tipo:'entrada',
-        quantidade:qtdNum, origem:'Recebimento', responsavel:rec.responsavel, recId:rec.id,
-        observacao:'Entrada automática via recebimento'+(rec.fornecedor?' — '+rec.fornecedor:'')
-      });
+ // --- BOTÃO BLINDADO (Recebimento) ---
+  document.getElementById('r_add').onclick = async () => {
+    const btn = document.getElementById('r_add');
+    btn.disabled = true; 
+    btn.innerText = 'Salvando...';
+    
+    const idEditando = window.recEditId;
+    const qtdStr = document.getElementById('r_qtd').value;
+    const produto = document.getElementById('r_produto').value;
+
+    if(!produto) {
+        btn.disabled = false;
+        btn.innerText = idEditando ? '💾 Salvar Edição' : 'Adicionar';
+        alert('O nome do produto é obrigatório!');
+        return; 
     }
+
+    const rec = {
+      id: idEditando ? idEditando : uid(), 
+      data: document.getElementById('r_data').value, 
+      tipo: document.getElementById('r_tipo').value,
+      produto: produto, 
+      qtd: qtdStr,
+      unidade: document.getElementById('r_unidade').value,
+      fornecedor: document.getElementById('r_fornecedor').value, 
+      lote: document.getElementById('r_lote').value,
+      validade: document.getElementById('r_validade').value, 
+      transporte: document.getElementById('r_transporte').value,
+      temperatura: document.getElementById('r_temp').value, 
+      sif: document.getElementById('r_sif').value,
+      embalagem: document.getElementById('r_embalagem').value, 
+      produtos: document.getElementById('r_produtos').value,
+      responsavel: document.getElementById('r_resp').value, 
+      acao_corretiva: document.getElementById('r_acao').value,
+    };
+
+    const freshList = await loadList(key);
+
+    if (idEditando) {
+        // EDITA O RECEBIMENTO
+        const index = freshList.findIndex(i => i.id === idEditando);
+        if (index !== -1) freshList[index] = rec;
+        window.recEditId = null;
+
+        // SE FOR EDIÇÃO, NÃO LANÇAMOS AUTOMATICAMENTE NO ESTOQUE DE NOVO 
+        // (Apenas salvamos a correção na ficha de recebimento)
+    } else {
+        // NOVO RECEBIMENTO
+        freshList.push(rec);
+        
+        // SÓ ADICIONA NO ESTOQUE SE FOR UMA ENTRADA NOVA
+        const qtdNum = parseFloat(rec.qtd);
+        if(qtdNum > 0){
+          await addMovement({
+            id: uid(), data: rec.data, produto: rec.produto, unidade: rec.unidade, tipo: 'entrada',
+            quantidade: qtdNum, origem: 'Recebimento', responsavel: rec.responsavel, recId: rec.id,
+            observacao: 'Entrada automática via recebimento' + (rec.fornecedor ? ' — ' + rec.fornecedor : '')
+          });
+        }
+    }
+
+    const ok = await saveList(key, freshList);
+    btn.disabled = false;
+    btn.innerText = 'Adicionar';
+    btn.style.backgroundColor = '';
+
+    if(!ok){ showSaveError(); return; }
     renderRecebimento();
-  });
+  };
+  
   document.getElementById('r_filter').addEventListener('change', (e)=> paintRecTable(list, e.target.value));
   paintRecTable(list, '');
 }
@@ -685,7 +729,11 @@ function paintRecTable(list, filterTipo){
       <td>${fmtDate(r.data)}</td><td>${r.tipo}</td><td>${r.produto}</td><td>${r.qtd||'—'}</td><td>${r.unidade||'—'}</td><td>${r.fornecedor||'—'}</td>
       <td>${fmtDate(r.validade)}</td><td>${pill(r.transporte)}</td><td>${pill(r.embalagem)}</td><td>${pill(r.produtos)}</td>
       <td>${r.responsavel||'—'}</td>
-      <td><button class="btn-del" onclick="__deleteRec('${r.id}')">Excluir</button></td>
+      // (Substitua a linha do botão na tabela por esta:)
+      <td>
+         <button class="btn-del" onclick="__deleteRec('${r.id}')">Excluir</button>
+         <button style="padding: 4px 8px; margin-left: 4px; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);" onclick="__editarRec('${r.id}')">✏️ Editar</button>
+      </td>
     </tr>`).join('') : `<tr><td colspan="12" class="empty">Nenhum recebimento registrado ainda.</td></tr>`;
 }
 window.__deleteRec = async (id)=>{
@@ -1394,6 +1442,41 @@ window.__editarTemp = async (key, idItem) => {
     btn.style.backgroundColor = 'var(--amber)'; 
     
     // Sobe a tela suavemente para o operador ver o formulário
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+// --- CÉREBRO DA EDIÇÃO: RECEBIMENTO ---
+window.__editarRec = async (idItem) => {
+    const lista = await loadList('qg_recebimento');
+    const item = lista.find(i => i.id === idItem);
+    if(!item) return;
+
+    // Preenche os campos
+    document.getElementById('r_data').value = item.data || '';
+    document.getElementById('r_tipo').value = item.tipo || 'Perecível';
+    
+    // Força a atualização do campo de tipo para mostrar/esconder Temp e SIF
+    document.getElementById('r_tipo').dispatchEvent(new Event('change'));
+
+    document.getElementById('r_produto').value = item.produto || '';
+    document.getElementById('r_qtd').value = item.qtd || '';
+    document.getElementById('r_unidade').value = item.unidade || '';
+    document.getElementById('r_fornecedor').value = item.fornecedor || '';
+    document.getElementById('r_lote').value = item.lote || '';
+    document.getElementById('r_validade').value = item.validade || '';
+    document.getElementById('r_transporte').value = item.transporte || '';
+    document.getElementById('r_temp').value = item.temperatura || '';
+    document.getElementById('r_sif').value = item.sif || '';
+    document.getElementById('r_embalagem').value = item.embalagem || '';
+    document.getElementById('r_produtos').value = item.produtos || '';
+    document.getElementById('r_resp').value = item.responsavel || '';
+    document.getElementById('r_acao').value = item.acao_corretiva || '';
+
+    // Salva o ID na memória (usamos recEditId para não misturar com o tempEditId)
+    window.recEditId = item.id;
+    const btn = document.getElementById('r_add');
+    btn.innerText = '💾 Salvar Edição';
+    btn.style.backgroundColor = 'var(--amber)'; 
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 /* ============ BACKUP E LIMPEZA ============ */
