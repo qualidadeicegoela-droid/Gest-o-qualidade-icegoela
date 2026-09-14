@@ -1168,7 +1168,7 @@ async function renderSaborizacao(){
       <div style="margin-top:20px;"><button class="btn btn-primary" id="sb_save">Salvar ficha</button></div>
     </div>
     <label style="margin-top: 10px; display: block; font-weight: 600; font-size: 0.9rem; color: var(--ink);">Observação / Ocorrências do Lote:</label>
-<textarea id="sab_obs" placeholder="Anote aqui desvios, atrasos ou detalhes do lote..." style="width: 100%; padding: 10px; border-radius: var(--radius); border: 1px solid var(--line); font-family: inherit; margin-top: 4px; resize: vertical; min-height: 60px;"></textarea>
+    <textarea id="sab_obs" placeholder="Anote aqui desvios, atrasos ou detalhes do lote..." style="width: 100%; padding: 10px; border-radius: var(--radius); border: 1px solid var(--line); font-family: inherit; margin-top: 4px; resize: vertical; min-height: 60px;"></textarea>
 
     <div class="card">
       <h2>Rastreabilidade</h2>
@@ -1180,42 +1180,23 @@ async function renderSaborizacao(){
     <div class="card">
       <h2>Histórico de fichas</h2>
       <div class="table-wrap"><table>
-        <thead><tr><th>Data</th><th>Produto</th><th>Lote</th><th>Operador</th><th>Ingred.</th><th>Embal.</th><th>Observação</th></tr></thead>
+        <thead><tr><th>Data</th><th>Produto</th><th>Lote</th><th>Operador</th><th>Ingred.</th><th>Embal.</th><th>Ações</th></tr></thead>
         <tbody id="sb_hist_body"></tbody>
       </table></div>
     </div>
   `;
 
-  function ingRow(v={}){
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="text" class="sb-i-nome" list="sb_ing_list" value="${v.ingrediente||''}" style="min-width:140px;"></td>
-      <td><input type="number" step="0.01" class="sb-i-qtd" value="${v.quantidade||''}" style="width:80px;"></td>
-      <td><select class="sb-i-un">${UNIDADES.map(u=>`<option ${u===(v.unidade||'kg')?'selected':''}>${u}</option>`).join('')}</select></td>
-      <td><input type="text" class="sb-i-lote" value="${v.lote||''}" style="width:120px;"></td>
-      <td><input type="text" class="sb-i-resp" value="${v.responsavel||''}" style="width:120px;"></td>
-      <td><button class="btn-del" type="button" onclick="this.closest('tr').remove()">✕</button></td>
-    `;
-    document.getElementById('sb_ing_body').appendChild(tr);
+  // Inicializa linhas vazias se não estiver editando
+  if(!window.saborEditId) {
+    window.__sbIngRow(); 
+    window.__sbIngRow();
+    window.__sbEmbRow();
   }
-  function embRow(v={}){
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="text" class="sb-e-nome" list="sb_ing_list" value="${v.embalagem||''}" style="min-width:140px;"></td>
-      <td><input type="number" step="0.01" class="sb-e-qtd" value="${v.quantidade||''}" style="width:80px;"></td>
-      <td><select class="sb-e-un">${UNIDADES.map(u=>`<option ${u===(v.unidade||'un')?'selected':''}>${u}</option>`).join('')}</select></td>
-      <td><input type="text" class="sb-e-lote" value="${v.lote||''}" style="width:120px;"></td>
-      <td><input type="text" class="sb-e-resp" value="${v.responsavel||''}" style="width:120px;"></td>
-      <td><button class="btn-del" type="button" onclick="this.closest('tr').remove()">✕</button></td>
-    `;
-    document.getElementById('sb_emb_body').appendChild(tr);
-  }
-  ingRow(); ingRow();
-  embRow();
-  document.getElementById('sb_ing_add').addEventListener('click', ()=>ingRow());
-  document.getElementById('sb_emb_add').addEventListener('click', ()=>embRow());
 
-  // --- BOTÃO BLINDADO (Saborização) ---
+  document.getElementById('sb_ing_add').addEventListener('click', ()=>window.__sbIngRow());
+  document.getElementById('sb_emb_add').addEventListener('click', ()=>window.__sbEmbRow());
+
+  // --- BOTÃO BLINDADO DE SALVAR / EDITAR ---
   document.getElementById('sb_save').onclick = async () => {
     const btn = document.getElementById('sb_save');
     btn.disabled = true;
@@ -1256,24 +1237,19 @@ async function renderSaborizacao(){
     const freshList = await loadList(key);
 
     if (idEditando) {
-        // --- MODO EDIÇÃO ---
         const index = freshList.findIndex(i => i.id === idEditando);
         if (index !== -1) freshList[index] = rec;
         window.saborEditId = null;
 
-        // 1. Apaga os movimentos antigos dessa ficha no Estoque
+        // Apaga movimentos antigos e recalcula estoque
         const movs = (await loadList('qg_estoque_mov')).filter(m => m.saborId !== idEditando);
         await saveList('qg_estoque_mov', movs);
-        
-        // 2. Força o estoque a recalcular os saldos sem aqueles movimentos velhos
         await recalcStockFromMovements();
     } else {
-        // --- MODO NOVA FICHA ---
         freshList.push(rec);
     }
 
-    // --- LANÇAMENTO NO ESTOQUE (Roda tanto no Novo quanto na Edição) ---
-    // Como apagamos os velhos na edição, o sistema lança tudo "fresquinho" com os valores atualizados!
+    // Lança saídas no estoque
     for(const i of ingredientes){
       const q = parseFloat(i.quantidade);
       if(q>0){
@@ -1296,7 +1272,6 @@ async function renderSaborizacao(){
     }
 
     const ok = await saveList(key, freshList);
-    
     btn.disabled = false;
     btn.innerText = 'Salvar ficha';
     btn.style.backgroundColor = '';
@@ -1305,56 +1280,80 @@ async function renderSaborizacao(){
     renderSaborizacao();
   };
 
-  // --- CÉREBRO DA EDIÇÃO (Fica aqui dentro para acessar as linhas dinâmicas) ---
-  window.__editarSabor = async (idItem) => {
-      const lista = await loadList(key);
-      const item = lista.find(i => i.id === idItem);
-      if(!item) return;
-
-      // 1. Preenche os campos principais
-      document.getElementById('sb_data').value = item.data || '';
-      document.getElementById('sb_produto').value = item.produto || '';
-      document.getElementById('sb_operador').value = item.operador || '';
-      document.getElementById('sb_lote').value = item.lote || '';
-      document.getElementById('sab_obs').value = item.obs || '';
-
-      // 2. Apaga as linhas em branco e recria com os ingredientes salvos
-      document.getElementById('sb_ing_body').innerHTML = '';
-      if(item.ingredientes && item.ingredientes.length > 0) {
-          item.ingredientes.forEach(i => ingRow(i));
-      } else {
-          ingRow(); 
-      }
-
-      // 3. Mesma coisa para as embalagens
-      document.getElementById('sb_emb_body').innerHTML = '';
-      if(item.embalagens && item.embalagens.length > 0) {
-          item.embalagens.forEach(e => embRow(e));
-      } else {
-          embRow();
-      }
-
-      // 4. Salva a memória e acende o botão
-      window.saborEditId = item.id;
-      const btn = document.getElementById('sb_save');
-      btn.innerText = '💾 Salvar Edição';
-      btn.style.backgroundColor = 'var(--amber)'; 
-      
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   paintSaborHist(list);
   document.getElementById('sb_trace').addEventListener('input', e=>paintTrace(list, e.target.value));
   paintTrace(list, '');
-} // <-- FECHA A FUNÇÃO renderSaborizacao()
+}
 
+// --- FUNÇÕES GLOBAIS DE APOIO DA SABORIZAÇÃO ---
+window.__sbIngRow = (v={}) => {
+  const tbody = document.getElementById('sb_ing_body');
+  if(!tbody) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="sb-i-nome" list="sb_ing_list" value="${v.ingrediente||''}" style="min-width:140px;"></td>
+    <td><input type="number" step="0.01" class="sb-i-qtd" value="${v.quantidade||''}" style="width:80px;"></td>
+    <td><select class="sb-i-un">${UNIDADES.map(u=>`<option ${u===(v.unidade||'kg')?'selected':''}>${u}</option>`).join('')}</select></td>
+    <td><input type="text" class="sb-i-lote" value="${v.lote||''}" style="width:120px;"></td>
+    <td><input type="text" class="sb-i-resp" value="${v.responsavel||''}" style="width:120px;"></td>
+    <td><button class="btn-del" type="button" onclick="this.closest('tr').remove()">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+};
 
-// ===============================================================
-// FUNÇÕES DA TABELA DE SABORIZAÇÃO (Fora do render principal)
-// ===============================================================
+window.__sbEmbRow = (v={}) => {
+  const tbody = document.getElementById('sb_emb_body');
+  if(!tbody) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="sb-e-nome" list="sb_ing_list" value="${v.embalagem||''}" style="min-width:140px;"></td>
+    <td><input type="number" step="0.01" class="sb-e-qtd" value="${v.quantidade||''}" style="width:80px;"></td>
+    <td><select class="sb-e-un">${UNIDADES.map(u=>`<option ${u===(v.unidade||'un')?'selected':''}>${u}</option>`).join('')}</select></td>
+    <td><input type="text" class="sb-e-lote" value="${v.lote||''}" style="width:120px;"></td>
+    <td><input type="text" class="sb-e-resp" value="${v.responsavel||''}" style="width:120px;"></td>
+    <td><button class="btn-del" type="button" onclick="this.closest('tr').remove()">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+};
+
+window.__editarSabor = async (idItem) => {
+  const lista = await loadList('qg_saborizacao');
+  const item = lista.find(i => i.id === idItem);
+  if(!item) return;
+
+  // Vai para a aba de saborização se não estiver nela
+  if(typeof switchTab === 'function') switchTab('saborizacao');
+
+  document.getElementById('sb_data').value = item.data || '';
+  document.getElementById('sb_produto').value = item.produto || '';
+  document.getElementById('sb_operador').value = item.operador || '';
+  document.getElementById('sb_lote').value = item.lote || '';
+  document.getElementById('sab_obs').value = item.obs || '';
+
+  document.getElementById('sb_ing_body').innerHTML = '';
+  if(item.ingredientes && item.ingredientes.length > 0) {
+      item.ingredientes.forEach(i => window.__sbIngRow(i));
+  } else {
+      window.__sbIngRow(); 
+  }
+
+  document.getElementById('sb_emb_body').innerHTML = '';
+  if(item.embalagens && item.embalagens.length > 0) {
+      item.embalagens.forEach(e => window.__sbEmbRow(e));
+  } else {
+      window.__sbEmbRow();
+  }
+
+  window.saborEditId = item.id;
+  const btn = document.getElementById('sb_save');
+  btn.innerText = '💾 Salvar Edição';
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 function paintSaborHist(list){
   const tbody = document.getElementById('sb_hist_body');
+  if(!tbody) return;
   const rows = list.slice().reverse();
   tbody.innerHTML = rows.length ? rows.map(r=>`
     <tr>
@@ -1363,7 +1362,7 @@ function paintSaborHist(list){
       <td>
         <div style="display: flex; gap: 4px;">
           <button class="btn btn-ghost btn-sm" onclick="__toggleSaborDetail('${r.id}')">Detalhes</button>
-           <button class="btn-edit" onclick="__editarRec('${r.id}')">Editar</button>
+          <button class="btn-edit" onclick="__editarSabor('${r.id}')">✏️ Editar</button>
           <button class="btn-del" onclick="__deleteSabor('${r.id}')">Excluir</button>
         </div>
       </td>
@@ -1405,6 +1404,7 @@ window.__deleteSabor = async (id)=>{
 
 function paintTrace(list, q){
   const wrap = document.getElementById('sb_trace_results');
+  if(!wrap) return;
   const term = (q||'').trim().toLowerCase();
   if(!term){ wrap.innerHTML = '<p class="empty">Digite um número de lote para ver onde ele foi usado ou o que compõe esse lote.</p>'; return; }
   const matches = list.filter(r=>
