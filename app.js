@@ -148,10 +148,10 @@ const EMBALAGEM_SUGESTOES = ['Pote 200ml','Tampa 200ml','Pote 300ml','Tampa 300m
 
 const TEMP_RANGES = {
  'Freezer Picolé':[-25,-12],
- 'Freezer Polpa':[0,4],
+ 'Freezer Polpa':[0,5],
  'Banho Maria Picolé':[30,40],
- 'Antecâmara Expedição':[0,4],
- 'Câmara Expedição':[-18,-12],
+ 'Antecâmara Expedição':[-15,-20],
+ 'Câmara Expedição':[-18,-35],
 };
 
 /* ============ MODULE CONFIG (CRUD genérico) ============ */
