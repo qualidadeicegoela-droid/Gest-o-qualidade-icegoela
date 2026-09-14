@@ -150,8 +150,8 @@ const TEMP_RANGES = {
  'Freezer Picolé':[-25,-12],
  'Freezer Polpa':[0,5],
  'Banho Maria Picolé':[30,40],
- 'Antecâmara Expedição':[-15,-20],
- 'Câmara Expedição':[-18,-35],
+ 'Antecâmara Expedição':[-20,-15],
+ 'Câmara Expedição':[-35,-18],
 };
 
 /* ============ MODULE CONFIG (CRUD genérico) ============ */
