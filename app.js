@@ -810,15 +810,24 @@ async function renderEstoque(){
   const movs = await loadList('qg_estoque_mov');
   const content = document.getElementById('content');
   content.innerHTML = `
-    <div class="tag-note">Toda entrada registrada em <b>Recebimento</b> soma aqui automaticamente. Use o formulário abaixo para dar baixa (saída/uso) ou fazer um ajuste manual de entrada.</div>
+    <div class="tag-note">Toda entrada registrada em <b>Recebimento</b> soma aqui automaticamente. Use a pesquisa e os filtros rápidos para monitorar itens críticos.</div>
+    
     <div class="card">
       <h2>Situação atual do estoque</h2>
-      <div class="toolbar"><input type="text" id="e_search" placeholder="Buscar produto…"></div>
+      <div class="toolbar">
+        <input type="text" id="e_search" placeholder="Buscar produto…" style="flex: 1; min-width: 220px;">
+        <select id="e_status_filter" style="border:1px solid var(--line); border-radius:var(--radius); padding:9px 12px; font-size:13px; font-family:inherit; background:#F8FAFC; color:var(--ink);">
+          <option value="all">🔍 Todos os status</option>
+          <option value="low">⚠️ Estoque Baixo (≤ 5)</option>
+          <option value="zero">🔴 Zerados (0)</option>
+        </select>
+      </div>
       <div class="table-wrap"><table>
         <thead><tr><th>Produto</th><th>Unidade</th><th>Quantidade atual</th></tr></thead>
         <tbody id="e_stock_body"></tbody>
       </table></div>
     </div>
+
     <div class="card">
       <h2>Registrar movimentação</h2>
       <div class="form-grid">
@@ -834,6 +843,7 @@ async function renderEstoque(){
       </div>
       <button class="btn btn-primary" id="e_add">Registrar movimentação</button>
     </div>
+
     <div class="card">
       <h2>Histórico de movimentações</h2>
       <div class="table-wrap"><table>
@@ -842,16 +852,43 @@ async function renderEstoque(){
       </table></div>
     </div>
   `;
-  function paintStock(filter){
-    const f=(filter||'').toLowerCase();
-    const rows = stock.filter(s=>!f||s.produto.toLowerCase().includes(f)).slice().sort((a,b)=>a.produto.localeCompare(b.produto));
+
+  function paintStock(filterText, statusFilter){
+    const f = (filterText || '').toLowerCase();
+    const sf = statusFilter || 'all';
+
+    const rows = stock.filter(s => {
+      const matchText = !f || s.produto.toLowerCase().includes(f);
+      let matchStatus = true;
+      if (sf === 'low') {
+        matchStatus = s.quantidade > 0 && s.quantidade <= 5;
+      } else if (sf === 'zero') {
+        matchStatus = s.quantidade === 0;
+      }
+      return matchText && matchStatus;
+    }).sort((a,b)=>a.produto.localeCompare(b.produto));
+
     document.getElementById('e_stock_body').innerHTML = rows.length ? rows.map(s=>`
-      <tr><td>${s.produto}</td><td>${s.unidade}</td>
-      <td><span class="pill ${s.quantidade<0?'nc':(s.quantidade===0?'neutral':'c')}">${s.quantidade} ${s.unidade}</span></td></tr>
-    `).join('') : `<tr><td colspan="3" class="empty">Nenhum item em estoque ainda. Registre um recebimento para começar.</td></tr>`;
+      <tr>
+        <td>${s.produto}</td>
+        <td>${s.unidade}</td>
+        <td><span class="pill ${s.quantidade<0?'nc':(s.quantidade===0?'neutral':'c')}">${s.quantidade} ${s.unidade}</span></td>
+      </tr>
+    `).join('') : `<tr><td colspan="3" class="empty">Nenhum item encontrado com os filtros selecionados.</td></tr>`;
   }
-  paintStock('');
-  document.getElementById('e_search').addEventListener('input', e=>paintStock(e.target.value));
+
+  // Inicializa sem filtros
+  paintStock('', 'all');
+
+  const searchInput = document.getElementById('e_search');
+  const statusFilterSelect = document.getElementById('e_status_filter');
+
+  const triggerFilter = () => {
+    paintStock(searchInput.value, statusFilterSelect.value);
+  };
+
+  searchInput.addEventListener('input', triggerFilter);
+  statusFilterSelect.addEventListener('change', triggerFilter);
 
   const movBody = document.getElementById('e_mov_body');
   const rows = movs.slice().reverse();
@@ -877,6 +914,7 @@ async function renderEstoque(){
     renderEstoque();
   });
 }
+
 window.__deleteMov = async (id)=>{
   const movs = (await loadList('qg_estoque_mov')).filter(m=>m.id!==id);
   await saveList('qg_estoque_mov', movs);
