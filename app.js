@@ -1674,22 +1674,31 @@ window.__downloadBackup = async () => {
 
 window.__limparBancoDeDados = async () => {
   // Proteção para ninguém apertar sem querer
-  const senha = prompt("CUIDADO: Isso vai APAGAR O HISTÓRICO DA NUVEM.\nAs planilhas voltarão ao zero para o novo ciclo.\nDigite a palavra ZERAR para confirmar:");
+  const senha = prompt("CUIDADO: Isso vai APAGAR O HISTÓRICO DA NUVEM.\nO estoque, movimentações e fornecedores serão MANTIDOS intactos.\nDigite a palavra ZERAR para confirmar:");
   
   if(senha === 'ZERAR') {
-     // Listas que serão zeradas (histórico de produção)
-     const collections = ['qg_piq', 'qg_temp_producao', 'qg_temp_expedicao', 'qg_recebimento', 'qg_estoque', 'qg_estoque_mov', 'qg_pasteurizacao', 'qg_saborizacao', 'qg_higiene'];
+     // Apenas o histórico operacional é limpo. Estoque e movimentações ficam de fora!
+     const collections = [
+       'qg_piq', 
+       'qg_temp_producao', 
+       'qg_temp_expedicao', 
+       'qg_recebimento', 
+       'qg_pasteurizacao', 
+       'qg_saborizacao', 
+       'qg_higiene'
+     ];
      
-     // Sobrescreve as listas com arrays vazios na nuvem
+     // Sobrescreve apenas as listas operacionais com arrays vazios
      for(const k of collections) {
         await saveList(k, []);
      }
      
-     alert("Sistema zerado com sucesso! A página será recarregada.");
+     alert("Histórico zerado com sucesso! O estoque e as quantidades foram preservados. A página será recarregada.");
      location.reload();
   } else if (senha !== null) {
      alert("Palavra incorreta. O sistema NÃO foi zerado.");
   }
 };
+
 /* ============ INIT ============ */
 route('dashboard');
