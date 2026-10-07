@@ -973,6 +973,8 @@ async function renderPasteurizacao(){
         <div class="tag-note">O resfriamento deve ser imediato após a pasteurização, em temperatura de 4°C ou inferior.</div>
         <div class="form-grid">
           <div class="field"><label>Temperatura Resfriamento (°C)</label><input type="number" step="0.1" id="pt_temp_r"></div>
+          <div class="field"><label>Início Resfriamento</label><input type="time" id="pt_inicio_r"></div>
+          <div class="field"><label>Final Resfriamento</label><input type="time" id="pt_final_r"></div>
           <div class="field"><label>Imediato após pasteurização?</label><select id="pt_imediato"><option value="">—</option><option>Sim</option><option>Não</option></select></div>
         </div>
         <div class="tag-note">A maturação deve ser em temperatura de 4°C ou inferior, por no máximo 24 horas.</div>
@@ -1039,6 +1041,8 @@ async function renderPasteurizacao(){
         tempPasteurizacao: document.getElementById('pt_temp_p').value,
         tempoPasteurizacao: document.getElementById('pt_tempo_p').value,
         tempResfriamento: document.getElementById('pt_temp_r').value,
+        inicioResfriamento: document.getElementById('pt_inicio_r').value,
+        finalResfriamento: document.getElementById('pt_final_r').value,
         imediato: document.getElementById('pt_imediato').value,
         tempMaturacao: document.getElementById('pt_temp_m').value,
         inicioMaturacao: receita.maturacao==='inicio_fim' ? document.getElementById('pt_inicio_m').value : '',
@@ -1119,6 +1123,7 @@ function pastDetailHtml(r, highlight){
       <tr><td>Temp. Pasteurização</td><td>${p.tempPasteurizacao||'—'} °C</td></tr>
       <tr><td>Tempo Pasteurização</td><td>${p.tempoPasteurizacao||'—'} min</td></tr>
       <tr><td>Temp. Resfriamento</td><td>${p.tempResfriamento||'—'} °C</td></tr>
+      ${p.inicioResfriamento||p.finalResfriamento ? `<tr><td>Início / Final Resfriamento</td><td>${p.inicioResfriamento||'—'} → ${p.finalResfriamento||'—'}</td></tr>` : ''}
       <tr><td>Imediato após pasteurização</td><td>${p.imediato||'—'}</td></tr>
       <tr><td>Temp. Maturação</td><td>${p.tempMaturacao||'—'} °C</td></tr>
       ${p.inicioMaturacao||p.finalMaturacao ? `<tr><td>Início / Final Maturação</td><td>${p.inicioMaturacao||'—'} → ${p.finalMaturacao||'—'}</td></tr>` : ''}
