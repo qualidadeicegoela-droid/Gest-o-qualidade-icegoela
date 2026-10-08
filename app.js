@@ -133,8 +133,8 @@ const RECIPES = [
     ]},
       { id:'picole_fruta_meia', nome:'Picolé de Fruta Meia Batida', pasteuriza:true, maturacao:'tempo_only', embalagem:true,
     ingredientes:[
-      {nome:'Água', qtd:439.5}, {nome:'Açúcar', qtd:120}, {nome:'Glucose', qtd:12.5},
-      {nome:'Maltodextrina', qtd:25}, {nome:'Liga Aqua 5', qtd:3},
+      {nome:'Água', qtd:439.5}, {nome:'Açúcar', qtd:120}, {nome:'Dextrose', qtd:5},
+      {nome:'Maltodextrina', qtd:32.5}, {nome:'Liga Aqua 5', qtd:3},
     ]},
   { id:'creme_americano', nome:'Creme Americano', pasteuriza:true, embalagem:true,
     ingredientes:[
