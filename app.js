@@ -131,6 +131,11 @@ const RECIPES = [
       {nome:'Água', qtd:879}, {nome:'Açúcar', qtd:240}, {nome:'Glucose', qtd:25},
       {nome:'Maltodextrina', qtd:50}, {nome:'Liga Aqua 5', qtd:6},
     ]},
+      { id:'picole_fruta_meia', nome:'Picolé de Fruta Meia Batida', pasteuriza:true, maturacao:'tempo_only', embalagem:true,
+    ingredientes:[
+      {nome:'Água', qtd:439.5}, {nome:'Açúcar', qtd:120}, {nome:'Glucose', qtd:12.5},
+      {nome:'Maltodextrina', qtd:25}, {nome:'Liga Aqua 5', qtd:3},
+    ]},
   { id:'creme_americano', nome:'Creme Americano', pasteuriza:true, embalagem:true,
     ingredientes:[
       {nome:'Água', qtd:385}, {nome:'Leite Integral', qtd:50}, {nome:'Leite Composto', qtd:42},
@@ -1129,6 +1134,7 @@ function pastDetailHtml(r, highlight){
       ${p.inicioMaturacao||p.finalMaturacao ? `<tr><td>Início / Final Maturação</td><td>${p.inicioMaturacao||'—'} → ${p.finalMaturacao||'—'}</td></tr>` : ''}
       <tr><td>Tempo de Maturação</td><td>${p.tempoMaturacao||'—'} h</td></tr>
       </tbody></table>`;
+
   } else {
     params = `<p class="empty">Calda não passa pela pasteurizadora.</p>`;
   }
