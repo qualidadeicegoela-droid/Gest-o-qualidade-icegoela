@@ -109,8 +109,8 @@ const RECIPES = [
     ]},
   { id:'base_icepro', nome:'Base Icepro', pasteuriza:true, maturacao:'inicio_fim', embalagem:false,
     ingredientes:[
-      {nome:'Água', qtd:789}, {nome:'Leite Zero Lactose', qtd:250}, {nome:'Polydextrose', qtd:25.8},
-      {nome:'Liga Neutra', qtd:5.85},
+      {nome:'Água', qtd:400}, {nome:'Leite Zero Lactose', qtd:125}, {nome:'Whey Protein Isolado', qtd:2.9}, {nome:'Polydextrose', qtd:12.7},
+      {nome:'Liga Neutra Industrial', qtd:3}, {nome:'Colágeno em pó', qtd:35}, {nome:'Sucralose', qtd:0.121}, {nome:'Vitaminas', qtd:1.45}
     ]},
   { id:'cupuacu', nome:'Cupuaçu', pasteuriza:false, embalagem:true,
     ingredientes:[
