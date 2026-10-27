@@ -96,7 +96,7 @@ const SEED_DOCUMENTOS = [
  ['ANL-007-R0','Certificado de licenciamento integrado - Empresa','','','Ausente','',''],
 ];
 const HYGIENE_ITEMS = ['Uniforme limpo','Uso de touca','Sapato adequado','Cabelo preso','Barba aparada','Unhas aparadas/sem esmalte','Sem maquiagem','Sem perfume','Sem anel','Sem brincos','Sem pulseiras','Sem relógio','Sem piercing (protegido)','Sem aparelho celular'];
-const PACKAGE_SIZES = ['Picolé','200ml','300ml','350ml','450ml','500ml','1L','1,5L','1,8L','5L','10L'];
+const PACKAGE_SIZES = ['Picolé','150ml',  '200ml','300ml','350ml','450ml','500ml','1L','1,5L','1,8L','5L','10L'];
 const UNIDADES = ['kg','g','L','ml','un','cx','pct','dz'];
 
 /* Receitas fixas de pasteurização — quantidades da receita padrão (kg) */
